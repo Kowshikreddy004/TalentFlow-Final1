@@ -33,7 +33,7 @@ export function JobsBoard() {
   // ✅ Load jobs
   const { data: jobs = [], isLoading } = useJobs({
     status: statusFilter,
-    title: "",
+    title: titleFilter,
   });
 
   const reorderMutation = useReorderJobs();

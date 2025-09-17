@@ -6,7 +6,10 @@ import {
   useSensor,
   useSensors,
   closestCorners,
+  useDroppable,
+  useDraggable,
 } from "@dnd-kit/core";
+import { CSS } from "@dnd-kit/utilities";
 import { useCandidates, useUpdateCandidateStage } from "../hooks/useCandidates";
 import { Candidate, CandidateStage } from "@/types";
 import { useMemo, useState } from "react";
@@ -22,7 +25,7 @@ const STAGES: CandidateStage[] = [
   "rejected",
 ];
 
-export function CandidateKanbanBoard() {
+export function CandidateKanbanBoard({ visibleStages = STAGES }: { visibleStages?: CandidateStage[] }) {
   const { data: candidates = [], isLoading } = useCandidates();
   const [activeCandidate, setActiveCandidate] = useState<Candidate | null>(null);
   const updateStageMutation = useUpdateCandidateStage();
@@ -73,7 +76,7 @@ export function CandidateKanbanBoard() {
       collisionDetection={closestCorners}
     >
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {STAGES.map((stage) => (
+        {visibleStages.map((stage) => (
           <KanbanColumn
             key={stage}
             stage={stage}
@@ -101,39 +104,46 @@ function KanbanColumn({
   stage: CandidateStage;
   candidates: Candidate[];
 }) {
+  const { setNodeRef, isOver } = useDroppable({ id: stage });
   return (
     <div
-      id={stage}
-      className="bg-secondary rounded-lg p-2 flex flex-col gap-2 min-h-[200px]"
+      ref={setNodeRef}
+      className={`rounded-lg p-2 flex flex-col gap-2 min-h-[240px] border ${isOver ? 'bg-accent/40' : 'bg-secondary'}`}
     >
       <h3 className="font-bold p-2 capitalize">{stage}</h3>
       <div className="flex-1 space-y-2">
         {candidates.map((candidate) => (
-          <CandidateCard key={candidate.id} candidate={candidate} />
+          <DraggableCandidateCard key={candidate.id} candidate={candidate} />
         ))}
       </div>
     </div>
   );
 }
 
-function CandidateCard({
-  candidate,
-  isOverlay,
-}: {
-  candidate: Candidate;
-  isOverlay?: boolean;
-}) {
+function DraggableCandidateCard({ candidate, isOverlay }: { candidate: Candidate; isOverlay?: boolean }) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: candidate.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+  } as React.CSSProperties;
+
   return (
-    <Card
-      id={candidate.id.toString()}
-      className={isOverlay ? "shadow-lg" : "shadow-sm"}
-    >
+    <Card ref={setNodeRef} style={style} className={isOverlay ? "shadow-lg" : "shadow-sm"} {...attributes} {...listeners}>
       <CardHeader className="p-3">
         <CardTitle className="text-sm">{candidate.name}</CardTitle>
       </CardHeader>
-      <CardContent className="p-3 text-xs text-muted-foreground">
-        {candidate.email}
-      </CardContent>
+      <CardContent className="p-3 text-xs text-muted-foreground">{candidate.email}</CardContent>
+    </Card>
+  );
+}
+
+function CandidateCard({ candidate, isOverlay }: { candidate: Candidate; isOverlay?: boolean }) {
+  return (
+    <Card className={isOverlay ? "shadow-lg" : "shadow-sm"}>
+      <CardHeader className="p-3">
+        <CardTitle className="text-sm">{candidate.name}</CardTitle>
+      </CardHeader>
+      <CardContent className="p-3 text-xs text-muted-foreground">{candidate.email}</CardContent>
     </Card>
   );
 }

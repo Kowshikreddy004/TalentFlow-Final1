@@ -6,6 +6,12 @@ import { List, LayoutGrid } from "lucide-react";
 
 export function CandidatesPage() {
     const [view, setView] = useState<'list' | 'kanban'>('list');
+    const allStages = ["applied","screen","tech","offer","hired","rejected"] as const;
+    const [visibleStages, setVisibleStages] = useState<Array<typeof allStages[number]>>([...allStages]);
+
+    const toggleStage = (s: typeof allStages[number]) => {
+        setVisibleStages((prev) => prev.includes(s) ? prev.filter(x => x!==s) : [...prev, s]);
+    };
 
     return (
         <div>
@@ -20,7 +26,19 @@ export function CandidatesPage() {
                     </Button>
                 </div>
             </div>
-            {view === 'list'? <CandidateList /> : <CandidateKanbanBoard />}
+
+            {view === 'kanban' && (
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                    {allStages.map((s) => (
+                        <Button key={s} size="sm" variant={visibleStages.includes(s) ? 'secondary' : 'outline'} onClick={() => toggleStage(s)} className="capitalize">
+                            {s}
+                        </Button>
+                    ))}
+                    <Button size="sm" variant="ghost" onClick={() => setVisibleStages([...allStages])}>Show all</Button>
+                </div>
+            )}
+
+            {view === 'list'? <CandidateList /> : <CandidateKanbanBoard visibleStages={visibleStages as any} />}
         </div>
     );
 }

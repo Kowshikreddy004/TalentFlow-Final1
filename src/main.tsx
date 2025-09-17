@@ -6,11 +6,8 @@ import { AppProviders } from './providers/AppProviders.tsx'
 import { seedDatabase } from './api/seeding.ts'
 
 async function enableMocking() {
-  if (process.env.NODE_ENV!== 'development') {
-    return
-  }
   const { worker } = await import('./api/browser')
-  await worker.start()
+  await worker.start({ serviceWorker: { url: '/mockServiceWorker.js' } })
   await seedDatabase();
 }
 

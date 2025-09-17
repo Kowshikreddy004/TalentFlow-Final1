@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Job } from "@/types";
 import { jobSchema, JobFormData } from "../types/job.schema";
-import { useCreateJob, useUpdateJob } from "../hooks/useJobs";
+import { useCreateJob, useUpdateJob, useDeleteJob, useUpdateJobStatus } from "../hooks/useJobs";
 
 interface JobFormDialogProps {
   job?: Job;
@@ -23,6 +23,8 @@ export function JobFormDialog({ job }: JobFormDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const createJobMutation = useCreateJob();
   const updateJobMutation = useUpdateJob();
+  const deleteJobMutation = useDeleteJob();
+  const updateStatusMutation = useUpdateJobStatus();
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<JobFormData>({
     resolver: zodResolver(jobSchema),
@@ -84,14 +86,32 @@ export function JobFormDialog({ job }: JobFormDialogProps) {
             <Input id="tags" {...register("tags")} />
           </div>
 
-          <Button
-            type="submit"
-            disabled={
-              createJobMutation.isPending || updateJobMutation.isPending
-            }
-          >
-            {job ? "Save Changes" : "Create Job"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="submit"
+              disabled={createJobMutation.isPending || updateJobMutation.isPending}
+            >
+              {job ? "Save Changes" : "Create Job"}
+            </Button>
+            {job && (
+              <>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => updateStatusMutation.mutate({ id: job.id, status: job.status === 'active' ? 'archived' : 'active' })}
+                >
+                  {job.status === 'active' ? 'Archive' : 'Unarchive'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => deleteJobMutation.mutate(job.id, { onSuccess: () => setIsOpen(false) })}
+                >
+                  Delete
+                </Button>
+              </>
+            )}
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Candidate, CandidateStage, CandidateTimelineEvent } from "@/types";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 
 // ---------- Fetch all candidates ----------
 const fetchCandidates = async (): Promise<Candidate[]> => {
@@ -36,13 +36,28 @@ export const useUpdateCandidateStage = () => {
 
   return useMutation({
     mutationFn: updateCandidateStage,
-    onSuccess: () => {
-      toast.success("Candidate stage updated.");
+    onMutate: async ({ id, stage }) => {
+      await queryClient.cancelQueries({ queryKey: ["candidates"] });
+      const prev = queryClient.getQueryData<Candidate[]>(["candidates"]);
+      if (prev) {
+        queryClient.setQueryData<Candidate[]>(["candidates"], (old = []) =>
+          old.map((c) => (c.id === id ? { ...c, stage } : c))
+        );
+      }
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(["candidates"], ctx.prev);
+      }
+      toast.error("Failed to update candidate stage.");
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["candidates"] });
       queryClient.invalidateQueries({ queryKey: ["timeline"] });
     },
-    onError: () => {
-      toast.error("Failed to update candidate stage.");
+    onSuccess: () => {
+      toast.success("Candidate stage updated.");
     },
   });
 };

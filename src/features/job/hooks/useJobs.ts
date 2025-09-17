@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Job } from "@/types";
-import { toast } from "sonner";
+import { toast } from "@/hooks/use-toast";
 import { arrayMove } from "@dnd-kit/sortable";
 
 // --- API helpers -------------------------------------------------------------
@@ -31,6 +31,11 @@ const updateJob = async (jobData: Partial<Job> & { id: number }): Promise<void> 
     body: JSON.stringify(updates),
   });
   if (!response.ok) throw new Error("Failed to update job");
+};
+
+const deleteJob = async (id: number): Promise<void> => {
+  const response = await fetch(`/jobs/${id}`, { method: "DELETE" });
+  if (!response.ok) throw new Error("Failed to delete job");
 };
 
 const reorderJobsAPI = async ({
@@ -77,6 +82,18 @@ export const useUpdateJob = () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: () => toast.error("Failed to update job."),
+  });
+};
+
+export const useDeleteJob = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => deleteJob(id),
+    onSuccess: () => {
+      toast.success("Job deleted!");
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+    onError: () => toast.error("Failed to delete job."),
   });
 };
 
