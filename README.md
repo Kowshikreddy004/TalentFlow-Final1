@@ -41,7 +41,7 @@ This project was built as a **front-end only** technical assignment – all data
 
 ```bash
 # 1️⃣ Clone the repository
-git clone https://github.com/<your-username>/talentflow.git
+git clone https://github.com/Kowshikreddy004/talentflow.git
 cd talentflow
 
 # 2️⃣ Install dependencies
